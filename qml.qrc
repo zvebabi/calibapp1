@@ -1,0 +1,23 @@
+<RCC>
+    <qresource prefix="/">
+        <file>main.qml</file>
+        <file>Settings.qml</file>
+        <file>ChartView.qml</file>
+        <file>QMLs/ButtonLabel.qml</file>
+        <file>QMLs/MenuIconLive.qml</file>
+        <file>QMLs/MainMenu.qml</file>
+        <file>images/logo.png</file>
+        <file>QMLs/ChartViewEditBar.qml</file>
+        <file>images/saveData.png</file>
+        <file>images/takeSnapshot.png</file>
+        <file>images/zoomIn.png</file>
+        <file>images/zoomOut.png</file>
+        <file>images/runAnalizer.png</file>
+        <file>images/delete.png</file>
+        <file>images/setVisible.png</file>
+        <file>images/runCalibration.png</file>
+        <file>images/logo_icon_7.png</file>
+        <file>QMLs/CustomLegend.qml</file>
+        <file>About.qml</file>
+    </qresource>
+</RCC>
