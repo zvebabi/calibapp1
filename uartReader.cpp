@@ -8,7 +8,7 @@
 #include <ctime>
 #include <memory>
 #define REAL_DEVICE
-//#define SHOW_Debug_
+#define SHOW_Debug_
 
 uartReader::uartReader(QObject *parent)
   : QObject(parent), m_serNumber(-1), m_nSecs(3600)
@@ -62,7 +62,7 @@ void uartReader::initDevice(QString port, QString baudRate,
     device->setFlowControl(QSerialPort::NoFlowControl);
     if(device->open(QIODevice::ReadWrite)){
         qDebug() << "Connected to: " << device->portName();
-        device->write("i");
+   //     device->write("i");
         device->setDataTerminalReady(true);
         device->setRequestToSend(false);
 //        while( serNumber == -1 ) {};
@@ -75,7 +75,7 @@ void uartReader::initDevice(QString port, QString baudRate,
 //                                                  +".txt"));
 //        if (!logFile->open(QIODevice::WriteOnly | QIODevice::Text))
 //            emit sendDebugInfo("Cannot create logfile", 2000);
-        updateProperties(propertiesNames_, propertiesValues_);
+  //      updateProperties(propertiesNames_, propertiesValues_);
     }
     else {
         qDebug() << "Can't open port" << port;
@@ -85,21 +85,26 @@ void uartReader::initDevice(QString port, QString baudRate,
 }
 
 void uartReader::updateProperties(QVariantList propertiesNames_,
-                                  QVariantList propertiesValues_)
+                                  QVariantList propertiesValues_, bool offset)
 {
 //    qDebug() << properties_;
     //parse properties
     QString command;
     //send period
-    command = QString("SR:%1:%2\r").arg(propertiesValues_[0].toInt(), 3,10, QChar('0'))
+    command = QString("SR:%1:%2").arg(propertiesValues_[0].toInt(), 3,10, QChar('0'))
                                  .arg(propertiesValues_[1].toInt(), 3,10, QChar('0'));
-    qDebug() << "updateProperties: " + command;
-    prepareCommandToSend(command);
-
+    if(!offset)
+    {
+        qDebug() << "updateProperties: " + command;
+        prepareCommandToSend(command);
+    }
+    else
+    {
     //send offset
-    command = QString("SOffs:%1\r").arg(propertiesValues_[2].toInt(), 4,10, QChar('0'));
-    qDebug() << "updateProperties: " + command;
-    prepareCommandToSend(command);
+        command = QString("SOffs:%1").arg(propertiesValues_[2].toInt(), 4,10, QChar('0'));
+        qDebug() << "updateProperties: " + command;
+        prepareCommandToSend(command);
+    }
 }
 
 void uartReader::getListOfPort()
@@ -119,7 +124,7 @@ void uartReader::readProperties()
 {
     QString command;
     //send command to read saved prop
-    command = QString("ReadValues\r\n");
+    command = QString("ReadValues");
     qDebug() << "readProperties: " + command;
     prepareCommandToSend(command);
 }
@@ -128,7 +133,7 @@ void uartReader::readTempsProperties(bool mV)
 {
     QString command;
     //send command to read saved prop
-    command = QString("ReadTemp:%1\r\n").arg(mV, 1);
+    command = QString("ReadTemp:%1").arg(mV, 1);
     qDebug() << "readProperties: " + command;
     prepareCommandToSend(command);
 }
@@ -237,6 +242,7 @@ void uartReader::sendDataToDevice()
             m_queueCommandsToSend.pop_front();
             emit sendDebugInfo(QString("Send: ") + cmd_);
             qDebug() << "sendDataToDevice: " + cmd_;
+            std::this_thread::sleep_for(std::chrono::milliseconds(200));
         }
     }
 #ifdef REAL_DEVICE
@@ -275,47 +281,56 @@ void uartReader::processLine(const QByteArray &_line)
     {
         //line.append(QString(w));
         splitLine.push_back(QString(w));
-//        qDebug() << "element is:" << *line.rbegin();
+        qDebug() << "element is:" << *splitLine.rbegin();
     }
     if(splitLine.empty())
     {
         qDebug() << "Empty splitLine!";
         return;
     }
-
-    if(splitLine[0] == "SR")
+    else if(splitLine[0] == "SR")
     {
         currentProperties.clear();
-        currentProperties.append(splitLine[1]);
-        currentProperties.append(splitLine[2]);
+        int value;
+        std::stringstream(splitLine[1].toStdString()) >> value;
+        qDebug() << "valueSR1 is: " << value;
+        currentProperties.append(value);
+        std::stringstream(splitLine[2].toStdString()) >> value;
+        qDebug() << "valueSR2 is: " << value;
+        currentProperties.append(value);
     }
-    if(splitLine[0] == "SOffs")
+    else if(splitLine[0] == "SOffs")
     {
-        currentProperties.append(splitLine[1]);
+        int value;
+        std::stringstream(splitLine[1].toStdString()) >> value;
+        qDebug() << "value SOffs is: " << value;
+        if( currentProperties.size() > 2 )
+            currentProperties.pop_back();
+        currentProperties.append(value);
         emit sendProperties(currentProperties);
     }
-
-    if(splitLine[0] == "mV" ||
-       splitLine[0] == "CODE" )
+    else if(splitLine[0] == "mV" || splitLine[0] == "CODE")
     {
-        QVariantList toSend;
+        if(!temperatureToSend.empty())
+            temperatureToSend.clear();
+
         std::stringstream ss;
         ss << splitLine[1].toStdString();
+
         std::string temp;
         int found;
         while (!ss.eof()) {
             ss >> temp;
             if (std::stringstream(temp) >> found)
             {
-                toSend.append(found);
+                temperatureToSend.append(found);
                 qDebug() << "temp is " << found;
             }
             temp = "";
         }
-        emit sendTemperatures(toSend);
+        emit sendTemperatures(temperatureToSend);
     }
-
-    if(splitLine[0] == "\r\n")
+    else if(splitLine[0] == "\r\n")
     {
         qDebug() << "new line recieved!";
         return;

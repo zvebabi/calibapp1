@@ -136,6 +136,15 @@ Item {
                 }
             }
             Button {
+                id: sendOffsetBTN
+                contentItem: ButtonLabel {text: qsTr("Send Offset")}
+                width: deviceSetter.itemsWidth
+                onClicked: {
+                    reciever.updateProperties(currentDeviceSetting.propertyName
+                                            , currentDeviceSetting.values, true)
+                }
+            }
+            Button {
                 id: readSettingsBTN
                 contentItem: ButtonLabel {text: qsTr("Read settings")}
                 width: deviceSetter.itemsWidth
@@ -148,7 +157,7 @@ Item {
                 contentItem: ButtonLabel {text: qsTr("Read temp")}
                 width: deviceSetter.itemsWidth
                 onClicked: {
-                    reciever.readTempsProperties(mvOrCode.checked)
+                    reciever.readTempsProperties(!mvOrCode.checked)
                 }
             }
             CheckBox {

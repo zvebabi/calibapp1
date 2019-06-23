@@ -42,7 +42,8 @@ public slots:
                     QVariantList propertiesNames_,
                     QVariantList propertiesValues_);
     void updateProperties(QVariantList propertiesNames_,
-                          QVariantList propertiesValues_);
+                          QVariantList propertiesValues_,
+                          bool offset = false);
     void getListOfPort();
     void readProperties();
     void readTempsProperties(bool mV);
@@ -127,7 +128,7 @@ private:
     std::ofstream diagnosticLog;
 
     QVariantList currentProperties;
-
+    QVariantList temperatureToSend;
 };
 
 #endif // ANALIZERCDC_H
